@@ -1,0 +1,183 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  base:
+    name: Archive Base Case
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: master
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive
+        run: tar -cvf new_england.case *.csv README LICENSE
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: case
+          path: new_england.case
+  dcpf:
+    name: Archive DCPF
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: dcpf
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive
+        run: tar -cvf new_england-dcpf.case *.csv README LICENSE
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: case-dcpf
+          path: new_england-dcpf.case
+  acpf:
+    name: Archive ACPF
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: acpf
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive
+        run: tar -cvf new_england-acpf.case *.csv README LICENSE
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: case-acpf
+          path: new_england-acpf.case
+  dcopf:
+    name: Archive DCOPF
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: dcopf
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive
+        run: tar -cvf new_england-dcopf.case *.csv README LICENSE
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: case-dcopf
+          path: new_england-dcopf.case
+  acopf:
+    name: Archive ACOPF
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: acopf
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Archive
+        run: tar -cvf new_england-acopf.case *.csv README LICENSE
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: case-acopf
+          path: new_england-acopf.case
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
+    permissions: write-all
+    needs: [ base, dcpf ]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: case
+      - uses: actions/download-artifact@v4
+        with:
+          name: case-dcpf
+      - uses: actions/download-artifact@v4
+        with:
+          name: case-acpf
+      - uses: actions/download-artifact@v4
+        with:
+          name: case-dcopf
+      - uses: actions/download-artifact@v4
+        with:
+          name: case-acopf
+
+      - name: Release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload base artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./new_england.case
+          asset_name: new_england-${{ github.ref_name }}.case
+          asset_content_type: application/x-tar
+
+      - name: Upload dcpf artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./new_england-dcpf.case
+          asset_name: new_england-dcpf-${{ github.ref_name }}.case
+          asset_content_type: application/x-tar
+
+      - name: Upload acpf artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./new_england-acpf.case
+          asset_name: new_england-acpf-${{ github.ref_name }}.case
+          asset_content_type: application/x-tar
+
+      - name: Upload dcopf artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./new_england-dcopf.case
+          asset_name: new_england-dcopf-${{ github.ref_name }}.case
+          asset_content_type: application/x-tar
+
+      - name: Upload acopf artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./new_england-acopf.case
+          asset_name: new_england-acopf-${{ github.ref_name }}.case
+          asset_content_type: application/x-tar
